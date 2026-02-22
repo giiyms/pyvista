@@ -3,107 +3,6 @@ using System.Text;
 namespace PyVista.Core;
 
 /// <summary>
-/// Provides dictionary-like access to field data arrays stored on a <see cref="DataObject"/>.
-/// This is a lightweight analogue of the Python <c>DataSetAttributes</c> class, backed by
-/// an in-memory <see cref="Dictionary{TKey, TValue}"/>.
-/// </summary>
-public sealed class DataSetAttributes
-{
-    private readonly Dictionary<string, double[]> _arrays;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="DataSetAttributes"/> class
-    /// that wraps the supplied dictionary.
-    /// </summary>
-    /// <param name="arrays">The backing dictionary of named arrays.</param>
-    /// <param name="association">The field association for these attributes.</param>
-    internal DataSetAttributes(Dictionary<string, double[]> arrays, FieldAssociation association)
-    {
-        _arrays = arrays ?? throw new ArgumentNullException(nameof(arrays));
-        Association = association;
-    }
-
-    /// <summary>Gets the field association type for this set of attributes.</summary>
-    public FieldAssociation Association { get; }
-
-    /// <summary>Gets the number of arrays.</summary>
-    public int Count => _arrays.Count;
-
-    /// <summary>Gets the names of all arrays.</summary>
-    public IEnumerable<string> Keys => _arrays.Keys;
-
-    /// <summary>
-    /// Gets or sets the array with the specified <paramref name="name"/>.
-    /// </summary>
-    /// <param name="name">The name of the array.</param>
-    /// <returns>The array data.</returns>
-    /// <exception cref="KeyNotFoundException">
-    /// Thrown when getting an array that does not exist.
-    /// </exception>
-    public double[] this[string name]
-    {
-        get => _arrays[name];
-        set => _arrays[name] = value ?? throw new ArgumentNullException(nameof(value));
-    }
-
-    /// <summary>
-    /// Determines whether an array with the given <paramref name="name"/> exists.
-    /// </summary>
-    /// <param name="name">The name of the array.</param>
-    /// <returns><c>true</c> if the array exists; otherwise, <c>false</c>.</returns>
-    public bool ContainsKey(string name) => _arrays.ContainsKey(name);
-
-    /// <summary>
-    /// Attempts to get the array associated with the specified <paramref name="name"/>.
-    /// </summary>
-    /// <param name="name">The name of the array.</param>
-    /// <param name="array">
-    /// When this method returns, contains the array if found; otherwise, <c>null</c>.
-    /// </param>
-    /// <returns><c>true</c> if the array was found; otherwise, <c>false</c>.</returns>
-    public bool TryGetArray(string name, out double[]? array) => _arrays.TryGetValue(name, out array);
-
-    /// <summary>
-    /// Sets an array with the given <paramref name="name"/>, optionally performing a deep copy.
-    /// </summary>
-    /// <param name="array">The data to store.</param>
-    /// <param name="name">The name of the array.</param>
-    /// <param name="deepCopy">When <c>true</c>, a copy of the array is stored.</param>
-    public void SetArray(double[] array, string name, bool deepCopy = true)
-    {
-        ArgumentNullException.ThrowIfNull(array);
-        ArgumentNullException.ThrowIfNull(name);
-        _arrays[name] = deepCopy ? (double[])array.Clone() : array;
-    }
-
-    /// <summary>
-    /// Removes the array with the specified <paramref name="name"/>.
-    /// </summary>
-    /// <param name="name">The name of the array to remove.</param>
-    /// <returns><c>true</c> if the array was removed; otherwise, <c>false</c>.</returns>
-    public bool Remove(string name) => _arrays.Remove(name);
-
-    /// <summary>
-    /// Removes all arrays.
-    /// </summary>
-    public void Clear() => _arrays.Clear();
-
-    /// <inheritdoc />
-    public override string ToString()
-    {
-        var sb = new StringBuilder();
-        sb.AppendLine("pyvista DataSetAttributes");
-        sb.AppendLine($"Association     : {Association}");
-        sb.AppendLine("Contains arrays :");
-        foreach (var kvp in _arrays)
-        {
-            sb.AppendLine($"    {kvp.Key,-24}double[{kvp.Value.Length}]");
-        }
-        return sb.ToString().TrimEnd();
-    }
-}
-
-/// <summary>
 /// Abstract base class for all PyVista data objects.
 /// <para>
 /// This is the C# equivalent of the Python <c>pyvista.DataObject</c> class.
@@ -279,7 +178,8 @@ public abstract class DataObject : IDisposable, IEquatable<DataObject>
     /// </exception>
     public void AddFieldData(double[] array, string name, bool deep = true)
     {
-        FieldData.SetArray(array, name, deep);
+        var data = deep ? (double[])array.Clone() : array;
+        FieldData.SetArray(data, name);
     }
 
     /// <summary>
